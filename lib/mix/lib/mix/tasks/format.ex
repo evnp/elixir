@@ -336,7 +336,7 @@ defmodule Mix.Tasks.Format do
         []
       end
 
-    for plugin <- plugins do
+    for plugin <- plugins, plugin != :elixir_format do
       cond do
         not Code.ensure_loaded?(plugin) ->
           Mix.raise("Formatter plugin #{inspect(plugin)} cannot be found")
@@ -370,7 +370,10 @@ defmodule Mix.Tasks.Format do
       Mix.Task.run("loadpaths", if(opts[:no_compile], do: ["--no-compile"], else: []))
     end
 
-    if !opts[:no_compile] and not Enum.all?(plugins, &Code.ensure_loaded?/1) do
+    if !opts[:no_compile] and
+         not (plugins
+              |> Enum.filter(&(&1 != :elixir_format))
+              |> Enum.all?(&Code.ensure_loaded?/1)) do
       Mix.Task.run("compile", [])
     end
 
@@ -715,8 +718,11 @@ defmodule Mix.Tasks.Format do
     cond do
       plugins = find_plugins_for_extension(formatter_opts, ext) ->
         fn input ->
-          Enum.reduce(plugins, base_formatter.(input), fn plugin, input ->
-            plugin.format(input, [extension: ext, file: file] ++ formatter_opts)
+          Enum.reduce(plugins, input, fn plugin, input ->
+            case plugin do
+              :elixir_format -> base_formatter.(input)
+              _ -> plugin.format(input, [extension: ext, file: file] ++ formatter_opts)
+            end
           end)
         end
 
@@ -730,8 +736,14 @@ defmodule Mix.Tasks.Format do
 
     plugins =
       Enum.filter(plugins, fn plugin ->
-        Code.ensure_loaded?(plugin) and function_exported?(plugin, :features, 1) and
-          ext in List.wrap(plugin.features(formatter_opts)[:extensions])
+        case plugin do
+          :elixir_format ->
+            ext in ~w(.ex .exs)
+
+          _ ->
+            Code.ensure_loaded?(plugin) and function_exported?(plugin, :features, 1) and
+              ext in List.wrap(plugin.features(formatter_opts)[:extensions])
+        end
       end)
 
     if plugins != [], do: plugins, else: nil
@@ -777,10 +789,15 @@ defmodule Mix.Tasks.Format do
   end
 
   defp find_sigils_from_plugins(plugin, formatter_opts) do
-    if Code.ensure_loaded?(plugin) and function_exported?(plugin, :features, 1) do
-      List.wrap(plugin.features(formatter_opts)[:sigils])
-    else
-      []
+    cond do
+      plugin == :elixir_format ->
+        []
+
+      Code.ensure_loaded?(plugin) and function_exported?(plugin, :features, 1) ->
+        List.wrap(plugin.features(formatter_opts)[:sigils])
+
+      true ->
+        []
     end
   end
 
