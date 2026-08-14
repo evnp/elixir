@@ -610,7 +610,7 @@ defmodule Mix.Tasks.FormatTest do
       File.write!(".formatter.exs", """
       [
         inputs: ["a.ex"],
-        plugins: [ExtensionExUpcasePlugin],
+        plugins: [:elixir_format, ExtensionExUpcasePlugin],
         from_formatter_exs: :yes
       ]
       """)
@@ -637,7 +637,7 @@ defmodule Mix.Tasks.FormatTest do
       File.write!(".formatter.exs", """
       [
         inputs: ["a.ex"],
-        plugins: [ExtensionExDoubleNewlinePlugin, ExtensionExUpcasePlugin],
+        plugins: [:elixir_format, ExtensionExDoubleNewlinePlugin, ExtensionExUpcasePlugin],
         from_formatter_exs: :yes
       ]
       """)
@@ -667,7 +667,7 @@ defmodule Mix.Tasks.FormatTest do
       File.write!(".formatter.exs", """
       [
         inputs: ["a.ex"],
-        plugins: [ExtensionExDoubleNewlinePlugin, SigilWPlugin, NewlineToDotPlugin, ExtensionExUpcasePlugin],
+        plugins: [:elixir_format, ExtensionExDoubleNewlinePlugin, SigilWPlugin, NewlineToDotPlugin, ExtensionExUpcasePlugin],
         from_formatter_exs: :yes
       ]
       """)
